@@ -21,6 +21,31 @@ function hasVisibleDescription(value) {
   return Boolean(sanitizeHtml(value, { allowedTags: [], allowedAttributes: {} }).trim());
 }
 
+async function listProducts(req, res) {
+  const { page, limit, search, status } = req.validated.query;
+  const filter = { company: req.user.company };
+
+  if (search) {
+    filter.productName = { $regex: _.escapeRegExp(search), $options: 'i' };
+  }
+  if (status !== 'all') {
+    filter.isActive = status === 'active';
+  }
+
+  const [products, total] = await Promise.all([
+    Product.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit),
+    Product.countDocuments(filter),
+  ]);
+
+  res.status(200).json({
+    products: products.map(serialize),
+    pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+  });
+}
+
 async function addProduct(req, res) {
   const fields = _.pick(req.body, ['productName', 'description']);
   fields.description = cleanDescription(fields.description);
@@ -113,4 +138,11 @@ async function restoreProduct(req, res) {
   res.status(200).json({ product: serialize(product) });
 }
 
-module.exports = { addProduct, updateProduct, buildPrintCode, deleteProduct, restoreProduct };
+module.exports = {
+  listProducts,
+  addProduct,
+  updateProduct,
+  buildPrintCode,
+  deleteProduct,
+  restoreProduct,
+};

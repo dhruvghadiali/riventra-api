@@ -62,6 +62,12 @@ const schemas = {
   codeQuery: Joi.object({
     type: Joi.string().valid('qr', 'barcode').default('qr'),
   }),
+  listQuery: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(50),
+    search: Joi.string().trim().max(100).allow('').default(''),
+    status: Joi.string().valid('all', 'active', 'inactive').default('all'),
+  }),
   idParams: Joi.object({
     companyId: objectId,
     productId: objectId,

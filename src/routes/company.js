@@ -4,6 +4,7 @@ const { authenticate, authorize } = require("../middleware/auth");
 const { validate } = require("../middleware/validate");
 const { asyncHandler } = require("../utils/async-handler");
 const {
+  listProducts,
   addProduct,
   updateProduct,
   buildPrintCode,
@@ -15,6 +16,11 @@ function buildCompanyRouter(config) {
   const router = express.Router();
   router.use(authenticate(config), authorize("company_admin"));
 
+  router.get(
+    "/products",
+    validate(schemas.listQuery, "query"),
+    asyncHandler(listProducts),
+  );
   router.post(
     "/products",
     validate(schemas.productCreate),

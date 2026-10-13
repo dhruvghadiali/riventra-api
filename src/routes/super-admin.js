@@ -4,6 +4,7 @@ const { authenticate, authorize } = require("../middleware/auth");
 const { validate } = require("../middleware/validate");
 const { asyncHandler } = require("../utils/async-handler");
 const {
+  listCompanies,
   createCompany,
   signupCompany,
   updateCompany,
@@ -14,6 +15,11 @@ function buildSuperAdminRouter(config) {
   const router = express.Router();
   router.use(authenticate(config), authorize("super_admin"));
 
+  router.get(
+    "/companies",
+    validate(schemas.listQuery, "query"),
+    asyncHandler(listCompanies),
+  );
   router.post(
     "/companies/signup",
     validate(schemas.companySignup),

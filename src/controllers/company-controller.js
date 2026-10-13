@@ -5,6 +5,32 @@ const User = require("../models/user");
 const { httpError } = require("../utils/http-error");
 const { serialize } = require("../utils/response");
 
+async function listCompanies(req, res) {
+  const { page, limit, search, status } = req.validated.query;
+  const filter = {};
+
+  if (search) {
+    filter.companyName = { $regex: _.escapeRegExp(search), $options: "i" };
+  }
+  if (status !== "all") {
+    filter.isActive = status === "active";
+  }
+
+  const [companies, total] = await Promise.all([
+    Company.find(filter)
+      .populate("createdBy", "firstName lastName mobileNumber")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit),
+    Company.countDocuments(filter),
+  ]);
+
+  res.status(200).json({
+    companies: companies.map(serialize),
+    pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+  });
+}
+
 async function createCompany(req, res) {
   const fields = _.pick(req.body, ["companyName", "address", "contactNumber"]);
   const company = await Company.create({ ...fields, createdBy: req.user._id });
@@ -98,4 +124,10 @@ async function removeCompany(req, res) {
   res.status(200).json({ company: serialize(company) });
 }
 
-module.exports = { createCompany, signupCompany, updateCompany, removeCompany };
+module.exports = {
+  listCompanies,
+  createCompany,
+  signupCompany,
+  updateCompany,
+  removeCompany,
+};
